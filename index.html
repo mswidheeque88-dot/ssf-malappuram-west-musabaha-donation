@@ -219,19 +219,21 @@ no:{label:'Receipt number',x:8,y:3.5,w:30,h:2.6,size:1.9,font:'Montserrat',weigh
 let sb,me,cache={},cur=null,draft=null,key=crypto.randomUUID(),sel='name',rows=[];
 const toast=(m,bad)=>{const t=$('toast');t.textContent=m;t.className=bad?'bad show':'show';clearTimeout(toast.h);toast.h=setTimeout(()=>t.className=bad?'bad':'',3500)};
 const loadImg=u=>new Promise((ok,no)=>{const i=new Image();i.crossOrigin='anonymous';i.onload=()=>ok(i);i.onerror=no;i.src=u});
-async function fonts(){try{await Promise.all(['400 20px Montserrat','600 20px Montserrat','800 20px Montserrat','400 20px "Noto Sans Malayalam"'].map(f=>document.fonts.load(f,'അ A')))}catch(e){}}
+let FP;const fonts=()=>FP||(FP=(async()=>{try{await Promise.all(['400 20px Montserrat','600 20px Montserrat','800 20px Montserrat','400 20px "Noto Sans Malayalam"'].map(f=>document.fonts.load(f,'അ A')))}catch(e){}})());
 async function tpl(id){if(cache[id])return cache[id];const{data:t,error}=await sb.from('templates').select('*').eq('id',id).single();if(error)throw error;
  const{data:s,error:e2}=await sb.storage.from('templates').createSignedUrl(t.image_path,3600);if(e2)throw e2;t.img=await loadImg(s.signedUrl);return cache[id]=t}
-function draw(cv,sc,r,t){const img=t.img,W=img.naturalWidth,H=img.naturalHeight;cv.width=W*sc;cv.height=H*sc;
+const OC=new WeakMap();
+function pix(img){let o=OC.get(img);if(!o){o=document.createElement('canvas');o.width=img.naturalWidth;o.height=img.naturalHeight;o.getContext('2d',{willReadFrequently:true}).drawImage(img,0,0);OC.set(img,o)}return o.getContext('2d',{willReadFrequently:true})}
+const outSc=img=>Math.min(1.5,Math.sqrt(12e6/(img.naturalWidth*img.naturalHeight)));
+function draw(cv,sc,r,t){const img=t.img,W=img.naturalWidth,H=img.naturalHeight;cv.width=Math.round(W*sc);cv.height=Math.round(H*sc);
  const x=cv.getContext('2d');x.imageSmoothingQuality='high';x.drawImage(img,0,0,cv.width,cv.height);
- const o=document.createElement('canvas');o.width=W;o.height=H;const ox=o.getContext('2d',{willReadFrequently:true});ox.drawImage(img,0,0);
  const v=r?{name:r.donor_name,amount:fmtAmt(r.amount),date:fmtDate(r.donated_on),no:r.receipt_no}:{name:'Donor name',amount:'₹ 0.00',date:fmtDate(today()),no:'SSFMW-0000-0000'};
  for(const k in t.fields){const f=t.fields[k];if(!f.on)continue;
-  if(f.mask){const rw=f.w/100*W,rh=f.h/100*H,l=f.x/100*W-rw/2,tp=f.y/100*H-rh/2;
-   for(let j=0;j<rh;j++){const py=Math.min(H-1,Math.max(0,Math.round(tp+j)));const a=ox.getImageData(Math.max(0,Math.round(l)-2),py,1,1).data,b=ox.getImageData(Math.min(W-1,Math.round(l+rw)+2),py,1,1).data;
-    const g=x.createLinearGradient(l*sc,0,(l+rw)*sc,0);g.addColorStop(0,`rgb(${a[0]},${a[1]},${a[2]})`);g.addColorStop(1,`rgb(${b[0]},${b[1]},${b[2]})`);x.fillStyle=g;x.fillRect(l*sc,(tp+j)*sc,rw*sc,sc+1)}}
+  if(f.mask){try{const ox=pix(img),rw=f.w/100*W,rh=f.h/100*H,l=f.x/100*W-rw/2,tp=f.y/100*H-rh/2,lx=Math.max(0,Math.round(l)-2),rx=Math.min(W-1,Math.round(l+rw)+2),y0=Math.max(0,Math.round(tp)),hh=Math.min(H-y0,Math.round(rh));
+   if(hh>0){const A=ox.getImageData(lx,y0,1,hh).data,B=ox.getImageData(rx,y0,1,hh).data;
+    for(let j=0;j<hh;j++){const g=x.createLinearGradient(l*sc,0,(l+rw)*sc,0);g.addColorStop(0,`rgb(${A[j*4]},${A[j*4+1]},${A[j*4+2]})`);g.addColorStop(1,`rgb(${B[j*4]},${B[j*4+1]},${B[j*4+2]})`);x.fillStyle=g;x.fillRect(l*sc,(y0+j)*sc,rw*sc,sc+1)}}}catch(e){}}
   x.font=`${f.weight} ${f.size/100*W*sc}px "${f.font}","Noto Sans Malayalam",sans-serif`;x.fillStyle=f.color;x.textAlign=f.align;x.textBaseline='middle';x.fillText(v[k],f.x/100*W*sc,f.y/100*H*sc)}}
-async function show(r){const t=await tpl(r.template_id);await fonts();draw($('cv'),1.5,r,t)}
+async function show(r){const t=await tpl(r.template_id);await fonts();draw($('cv'),1,r,t)}
 // ---------- auth ----------
 async function enter(user){const{data:p}=await sb.from('profiles').select('role,full_name,is_dev').eq('id',user.id).maybeSingle();
  if(!p){toast('No profile for this account.',1);await sb.auth.signOut();return}
@@ -272,12 +274,12 @@ $('gen').onclick=async()=>{const name=$('name').value.trim(),amt=parseFloat($('a
  const{data,error}=await sb.rpc('issue_receipt',{p_key:key,p_name:name,p_amount:Math.round(amt*100)/100,p_date:date,p_method:$('pm').value||null,p_ref:$('ref').value.trim()||null});
  $('gen').disabled=false;if(error){toast(error.message,1);return}
  key=crypto.randomUUID();cur=data;await show(data);toast('Receipt '+data.receipt_no+' saved');stats()};
-async function blobOf(r){const t=await tpl(r.template_id);await fonts();const c=document.createElement('canvas');draw(c,3,r,t);return new Promise(ok=>c.toBlob(ok,'image/png'))}
-const dl=(b,n)=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=n;a.click()};
+async function blobOf(r){const t=await tpl(r.template_id);await fonts();const c=document.createElement('canvas');draw(c,outSc(t.img),r,t);return new Promise(ok=>c.toBlob(b=>ok(b),'image/png'))}
+const dl=(b,n)=>{const u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=n;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)};
 const need=()=>cur||(toast('Generate or open a receipt first.',1),null);
-$('png').onclick=async()=>{if(need())dl(await blobOf(cur),cur.receipt_no+'.png')};
-$('pdf').onclick=async()=>{if(!need())return;const t=await tpl(cur.template_id);await fonts();const c=document.createElement('canvas');draw(c,3,cur,t);const w=210,h=w*c.height/c.width;
- const d=new window.jspdf.jsPDF({unit:'mm',format:[w,h],orientation:'p'});d.addImage(c.toDataURL('image/jpeg',.95),'JPEG',0,0,w,h);d.save(cur.receipt_no+'.pdf')};
+$('png').onclick=async()=>{if(!need())return;try{const b=await blobOf(cur);if(!b)throw 0;dl(b,cur.receipt_no+'.png')}catch(e){toast('Could not create the PNG. Re-upload the poster as a smaller PNG/JPG.',1)}};
+$('pdf').onclick=async()=>{if(!need())return;const t=await tpl(cur.template_id);await fonts();try{const c=document.createElement('canvas');draw(c,outSc(t.img),cur,t);const w=210,h=w*c.height/c.width,u=c.toDataURL('image/jpeg',.92);if(u.length<1000)throw 0;
+ const d=new window.jspdf.jsPDF({unit:'mm',format:[w,h],orientation:'p'});d.addImage(u,'JPEG',0,0,w,h);d.save(cur.receipt_no+'.pdf')}catch(e){toast('Could not create the PDF.',1)}};
 $('wa').onclick=async()=>{if(!need())return;const b=await blobOf(cur),f=new File([b],cur.receipt_no+'.png',{type:'image/png'});
  if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],text:'Receipt '+cur.receipt_no})}catch(e){}}
  else{dl(b,f.name);window.open('https://wa.me/?text='+encodeURIComponent('Receipt '+cur.receipt_no+' – SSF Malappuram West (image downloaded; attach it in WhatsApp)'),'_blank')}};
