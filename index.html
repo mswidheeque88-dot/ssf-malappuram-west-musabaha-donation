@@ -167,7 +167,7 @@ body.edit .ibar{display:flex;gap:3px;position:absolute;top:6px;right:6px;opacity
 <button id="bk" hidden style="position:fixed;bottom:16px;right:16px;z-index:70;width:auto">← Back to editor</button>
 <div class="okv" id="ok"><div style="text-align:center"><svg width="90" height="90" viewBox="0 0 52 52" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><circle cx="26" cy="26" r="23" stroke-opacity=".35"/><path d="M14 27l8 8 16-17"/></svg><h2 id="okn" style="margin:12px 0 0"></h2></div></div>
 <section id="pend" class="lg" hidden style="grid-template-columns:1fr;place-items:center;text-align:center"><div class="lgc"><svg class="hg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6 2h12M6 22h12M7 2c0 6 5 6 5 10s-5 4-5 10M17 2c0 6-5 6-5 10s5 4 5 10"/></svg><h2 id="pt"></h2><p class="note" id="pmsg"></p><button id="pchk">Check again</button><button class="sec" id="plo">Log out</button></div></section>
-<header hidden><b>SSF Malappuram West · Receipts</b><span style="display:flex;gap:10px;align-items:center"><button id="gdev" hidden>Developer page</button><small id="who"></small><button id="lo">Log out</button></span></header>
+<header hidden><b>SSF Malappuram West · Receipts</b><span style="display:flex;gap:10px;align-items:center"><button id="gdev" hidden>Developer page</button><small id="who"></small><button id="cpw">Change password</button><button id="lo">Log out</button></span></header>
 <main>
 <div class="card" id="cfgwarn" hidden><b>Supabase is not configured.</b><p class="note">Open this file and set SUPABASE_URL and SUPABASE_ANON_KEY at the top of the script.</p></div>
 <div id="app" hidden>
@@ -177,6 +177,7 @@ body.edit .ibar{display:flex;gap:3px;position:absolute;top:6px;right:6px;opacity
  <section id="t_create" class="grid"><div class="card"><h2>New receipt</h2>
   <label>Donor name</label><input id="name"><div class="row"><div><label>Amount (₹)</label><input id="amt" type="number" min="0.01" step="0.01" inputmode="decimal"></div><div><label>Date</label><input id="date" type="date"></div></div>
   <div class="row"><div><label>Payment method</label><select id="pm"><option value="">—</option><option>Cash</option><option>UPI</option><option>Bank Transfer</option><option>Other</option></select></div><div><label>Reference no.</label><input id="ref"></div></div>
+  <label>Donor mobile number (optional – used only for WhatsApp, not printed on the poster)</label><input id="ph" type="tel" inputmode="tel" autocomplete="off" placeholder="e.g. 9876543210">
   <div class="err" id="err"></div><button id="gen" class="shine">Generate receipt</button></div>
   <div class="card"><h2>Preview</h2><canvas id="cv"></canvas><div class="row"><button id="png">Download PNG</button><button id="pdf" class="sec">Download PDF</button></div><button id="wa" class="sec">Share on WhatsApp</button></div></section>
  <section id="t_hist" hidden class="card"><h2>Receipt history</h2>
@@ -195,11 +196,12 @@ body.edit .ibar{display:flex;gap:3px;position:absolute;top:6px;right:6px;opacity
   <button id="tsave">Save as new version and activate</button><p class="note">Old receipts keep the template version they were issued with. Drag fields on the preview.</p></div>
   <div class="card"><h2>Preview <span class="note" id="tver"></span></h2><canvas id="tv"></canvas></div></section>
  
-<section id="t_mem" hidden class="card"><h2>Members</h2><p class="note">New sign-ups appear as “pending”. Set them to member to let them issue receipts.</p><div class="scroll"><table><thead><tr><th>Username</th><th>Joined</th><th>Role</th></tr></thead><tbody id="mb"></tbody></table></div></section>
+<section id="t_mem" hidden class="card"><h2>Members</h2><p class="note">New sign-ups appear as “pending”. Set them to member to let them issue receipts.</p><div class="scroll"><table><thead><tr><th>Username</th><th>Joined</th><th>Role</th><th></th></tr></thead><tbody id="mb"></tbody></table></div></section>
  <section id="t_aud" hidden class="card"><h2>Audit log</h2><div class="scroll"><table><tbody id="aud"></tbody></table></div></section>
 </div></main>
 <div id="dev" hidden><div class="devbar"><b>Developer page · Website editor</b><span style="display:flex;gap:8px"><button id="dadm" class="sec">Admin panel</button><button id="dlo">Log out</button></span></div><main><p class="note">Only you can see this page. The client admins cannot open it.</p><section id="t_web" class="card"><h2>Website editor</h2><p class="note">Edit every text, picture and video on the home and login pages. Changes go live when you press Save.</p><div id="web"></div>
 <div class="row" style="position:sticky;bottom:8px;background:var(--card);padding:8px 0;margin-top:14px"><button id="wsave" class="shine">Save website</button><button id="pvh" class="sec">Preview home page</button></div><button class="sec" id="wreset">Restore default content</button><div class="row"><button class="sec" id="wexp">Download backup (.json)</button><button class="sec" id="wimp">Import backup</button></div><input type="file" id="wimpf" accept="application/json" hidden></section></main></div>
+<dialog id="pwd" class="card"><h2>Change password</h2><label>Current password</label><input id="pw0" type="password" autocomplete="current-password"><label>New password (min. 8 characters)</label><input id="pw1" type="password" autocomplete="new-password"><label>Confirm new password</label><input id="pw2" type="password" autocomplete="new-password"><div class="err" id="pwe"></div><div class="row"><button class="sec" id="pwc" type="button">Cancel</button><button id="pwo" type="button">Update password</button></div></dialog>
 <dialog id="dlg" class="card"><h2 id="dt"></h2><div id="de"><label>Donor name</label><input id="dn"><label>Amount (₹)</label><input id="da" type="number" step="0.01"><label>Date</label><input id="dd" type="date"></div><p id="dm" class="note"></p><div class="err" id="dx"></div><div class="row"><button class="sec" id="dc">Cancel</button><button id="dok">Confirm</button></div></dialog>
 <div id="etb" hidden><b>Developer editor</b><span class="seg"><button data-v="home">Home page</button><button data-v="login">Login page</button><button data-v="app">Admin panel</button></span><span id="esub"></span><button id="eph">📷 Photos ▾</button><button id="ecol">🎨 Colours</button><button id="eadv">⚙ All fields</button><small>Click any text to type · click any photo to replace it</small><span class="sp"></span><button id="esave">Save website</button><button id="eadm">Exit</button><button id="elo">Log out</button></div>
 <div id="ephm" hidden><button data-pp="logo.url">Logo</button><button data-pp="favicon.url">Browser tab icon</button><button data-pp="heroBg.url">Home background</button><button data-pp="heroMedia.url">Home picture (replaces sample receipt)</button><button data-pp="lbg.url">Login page background</button><button data-pp="welBg.url">Admin panel banner</button></div>
@@ -237,7 +239,7 @@ async function show(r){const t=await tpl(r.template_id);await fonts();draw($('cv
 // ---------- auth ----------
 async function enter(user){const{data:p}=await sb.from('profiles').select('role,full_name,is_dev').eq('id',user.id).maybeSingle();
  if(!p){toast('No profile for this account.',1);await sb.auth.signOut();return}
- me={id:user.id,role:p.role,name:p.full_name,dev:!!p.is_dev};if(p.role==='pending'||p.role==='disabled'){pend(p.role);return}
+ me={id:user.id,email:user.email,role:p.role,name:p.full_name,dev:!!p.is_dev};if(p.role==='pending'||p.role==='disabled'){pend(p.role);return}
  if(DEVMODE){if(!(me.dev&&me.role==='admin')){await sb.auth.signOut();$('home').hidden=true;$('login').hidden=false;$('lerr').textContent='This page is only for the developer.';return}
   startEditor();return}$('login').hidden=true;$('home').hidden=true;$('app').hidden=false;document.querySelector('header').hidden=false;$('who').textContent=me.name;$('wh').textContent=me.name;$('wr').textContent=me.role;
  document.querySelectorAll('.adm').forEach(b=>b.hidden=!isAdm());$('gdev').hidden=!(me.dev&&me.role==='admin');$('date').value=today();stats();hist();if(isAdm())members()}
@@ -260,10 +262,24 @@ $('lf').onsubmit=async e=>{e.preventDefault();const u=$('le').value.trim().toLow
  if(!r.data.session){m.textContent='Account created, but email confirmation is still on in Supabase. Ask the admin to turn it off.';return}
  $('lp').value=$('lp2').value='';okv(up?'Account created':'Welcome, '+u,()=>enter(r.data.user))};
 async function members(){const{data,error}=await sb.from('profiles').select('id,full_name,role,created_at').order('created_at',{ascending:false});if(error){toast(error.message,1);return}
- $('mb').innerHTML=data.map((p,i)=>`<tr style="--d:${i}"><td>${esc(p.full_name)}</td><td>${new Date(p.created_at).toLocaleDateString('en-IN')}</td><td><select data-id="${p.id}" ${p.id===me.id?'disabled':''}>${['pending','member','admin','disabled'].map(r=>`<option ${r===p.role?'selected':''}>${r}</option>`).join('')}</select></td></tr>`).join('');
+ $('mb').innerHTML=data.map((p,i)=>`<tr style="--d:${i}"><td>${esc(p.full_name)}</td><td>${new Date(p.created_at).toLocaleDateString('en-IN')}</td><td><select data-id="${p.id}" ${p.id===me.id?'disabled':''}>${['pending','member','admin','disabled'].map(r=>`<option ${r===p.role?'selected':''}>${r}</option>`).join('')}</select></td><td>${p.role==='pending'?`<button class="sm" data-ap="${p.id}">Approve</button>`:''}</td></tr>`).join('');
  const n=data.filter(p=>p.role==='pending').length;$('pc').textContent=n?'('+n+')':''}
+$('mb').onclick=async e=>{const b=e.target.closest('[data-ap]');if(!b)return;b.disabled=true;const{error}=await sb.from('profiles').update({role:'member'}).eq('id',b.dataset.ap);toast(error?error.message:'Member approved',!!error);members()};
 $('mb').onchange=async e=>{const id=e.target.dataset.id;if(!id)return;const{error}=await sb.from('profiles').update({role:e.target.value}).eq('id',id);toast(error?error.message:'Role updated',!!error);members()};
 $('lo').onclick=async()=>{await sb.auth.signOut();location.reload()};
+$('cpw').onclick=()=>{['pw0','pw1','pw2'].forEach(i=>$(i).value='');$('pwe').textContent='';$('pwd').showModal()};
+$('pwc').onclick=()=>$('pwd').close();
+$('pwo').onclick=async()=>{const a=$('pw0').value,n=$('pw1').value,c=$('pw2').value,m=$('pwe');m.textContent='';
+ if(!a){m.textContent='Enter your current password.';return}
+ if(n.length<8){m.textContent='New password must be at least 8 characters.';return}
+ if(n!==c){m.textContent='New passwords do not match.';return}
+ if(n===a){m.textContent='New password must be different from the current one.';return}
+ const b=$('pwo');b.disabled=true;
+ const v=await sb.auth.signInWithPassword({email:me.email,password:a});
+ if(v.error){b.disabled=false;m.textContent='Current password is incorrect.';return}
+ const{error}=await sb.auth.updateUser({password:n});b.disabled=false;
+ if(error){m.textContent=error.message;return}
+ $('pwd').close();toast('Password changed')};
 document.querySelector('.tabs').onclick=e=>{const tb=e.target.closest('button'),t=tb&&tb.dataset.t;if(!t)return;document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b===tb));
  ['create','hist','tpl','mem','aud'].forEach(n=>$('t_'+n).hidden=n!==t);if(t==='hist')hist();if(t==='tpl')loadDraft();if(t==='mem')members();if(t==='aud')audit()};
 // ---------- stats / create ----------
@@ -273,7 +289,11 @@ $('gen').onclick=async()=>{const name=$('name').value.trim(),amt=parseFloat($('a
  $('err').textContent=e.join(' ');if(e.length)return;$('gen').disabled=true;
  const{data,error}=await sb.rpc('issue_receipt',{p_key:key,p_name:name,p_amount:Math.round(amt*100)/100,p_date:date,p_method:$('pm').value||null,p_ref:$('ref').value.trim()||null});
  $('gen').disabled=false;if(error){toast(error.message,1);return}
- key=crypto.randomUUID();cur=data;await show(data);toast('Receipt '+data.receipt_no+' saved');stats()};
+ key=crypto.randomUUID();cur=data;const ph=normPh($('ph').value);if(ph){cur.phone=ph;savePh(data.id,ph)}$('ph').value='';await show(data);toast('Receipt '+data.receipt_no+' saved');stats()};
+// mobile number is kept only on this device (never drawn on the poster)
+function normPh(v){let d=String(v||'').replace(/\D/g,'');if(d.length===11&&d[0]==='0')d=d.slice(1);if(d.length===10)d='91'+d;return d.length>=11&&d.length<=15?d:''}
+function savePh(id,p){try{const m=JSON.parse(localStorage.getItem('ssf_ph')||'{}');m[id]=p;localStorage.setItem('ssf_ph',JSON.stringify(m))}catch(e){}}
+function getPh(r){if(r.phone)return r.phone;try{return(JSON.parse(localStorage.getItem('ssf_ph')||'{}'))[r.id]||''}catch(e){return''}}
 async function blobOf(r){const t=await tpl(r.template_id);await fonts();const c=document.createElement('canvas');draw(c,outSc(t.img),r,t);return new Promise(ok=>c.toBlob(b=>ok(b),'image/png'))}
 const dl=(b,n)=>{const u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=n;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)};
 const need=()=>cur||(toast('Generate or open a receipt first.',1),null);
@@ -281,6 +301,8 @@ $('png').onclick=async()=>{if(!need())return;try{const b=await blobOf(cur);if(!b
 $('pdf').onclick=async()=>{if(!need())return;const t=await tpl(cur.template_id);await fonts();try{const c=document.createElement('canvas');draw(c,outSc(t.img),cur,t);const w=210,h=w*c.height/c.width,u=c.toDataURL('image/jpeg',.92);if(u.length<1000)throw 0;
  const d=new window.jspdf.jsPDF({unit:'mm',format:[w,h],orientation:'p'});d.addImage(u,'JPEG',0,0,w,h);d.save(cur.receipt_no+'.pdf')}catch(e){toast('Could not create the PDF.',1)}};
 $('wa').onclick=async()=>{if(!need())return;const b=await blobOf(cur),f=new File([b],cur.receipt_no+'.png',{type:'image/png'});
+ const ph=getPh(cur)||normPh($('ph').value);
+ if(ph){dl(b,f.name);toast('Receipt image saved – attach it in the WhatsApp chat');window.open('https://wa.me/'+ph+'?text='+encodeURIComponent('Receipt '+cur.receipt_no+' – SSF Malappuram West. Thank you for your support.'),'_blank');return}
  if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],text:'Receipt '+cur.receipt_no})}catch(e){}}
  else{dl(b,f.name);window.open('https://wa.me/?text='+encodeURIComponent('Receipt '+cur.receipt_no+' – SSF Malappuram West (image downloaded; attach it in WhatsApp)'),'_blank')}};
 // ---------- history ----------
