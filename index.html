@@ -302,7 +302,13 @@ $('pdf').onclick=async()=>{if(!need())return;const t=await tpl(cur.template_id);
  const d=new window.jspdf.jsPDF({unit:'mm',format:[w,h],orientation:'p'});d.addImage(u,'JPEG',0,0,w,h);d.save(cur.receipt_no+'.pdf')}catch(e){toast('Could not create the PDF.',1)}};
 $('wa').onclick=async()=>{if(!need())return;const b=await blobOf(cur),f=new File([b],cur.receipt_no+'.png',{type:'image/png'});
  const ph=getPh(cur)||normPh($('ph').value);
- if(ph){dl(b,f.name);toast('Receipt image saved – attach it in the WhatsApp chat');window.open('https://wa.me/'+ph+'?text='+encodeURIComponent('Receipt '+cur.receipt_no+' – SSF Malappuram West. Thank you for your support.'),'_blank');return}
+ if(ph){const w=$('wa');w.disabled=true;toast('Preparing WhatsApp…');
+  try{const path='receipts/'+cur.receipt_no+'-'+crypto.randomUUID().slice(0,8)+'.png';
+   const{error}=await sb.storage.from('site-media').upload(path,b,{contentType:'image/png'});if(error)throw error;
+   const url=sb.storage.from('site-media').getPublicUrl(path).data.publicUrl;
+   const msg='السلام عليكم\nReceipt '+cur.receipt_no+' – SSF Malappuram West\nThank you for your support.\n\nView / download your receipt:\n'+url;
+   w.disabled=false;location.href='https://wa.me/'+ph+'?text='+encodeURIComponent(msg);return}
+  catch(err){w.disabled=false;toast('Could not upload receipt: '+(err.message||err),1)}}
  if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],text:'Receipt '+cur.receipt_no})}catch(e){}}
  else{dl(b,f.name);window.open('https://wa.me/?text='+encodeURIComponent('Receipt '+cur.receipt_no+' – SSF Malappuram West (image downloaded; attach it in WhatsApp)'),'_blank')}};
 // ---------- history ----------
